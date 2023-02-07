@@ -19,6 +19,9 @@
 
 package io.github.protocol.sms.smpp.client;
 
+import lombok.ToString;
+
+@ToString
 public class SmppClientConfig {
 
     public String host;
@@ -28,6 +31,8 @@ public class SmppClientConfig {
     public int ioThreadsNum;
 
     public BindMode bindMode;
+
+    public boolean autoBind;
 
     public int heartbeatIntervalSeconds;
 
@@ -62,6 +67,11 @@ public class SmppClientConfig {
 
     public SmppClientConfig bindMode(BindMode bindMode) {
         this.bindMode = bindMode;
+        return this;
+    }
+
+    public SmppClientConfig autoBind(boolean autoBind) {
+        this.autoBind = autoBind;
         return this;
     }
 
