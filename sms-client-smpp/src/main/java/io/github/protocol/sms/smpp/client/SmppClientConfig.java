@@ -27,6 +27,24 @@ public class SmppClientConfig {
 
     public int ioThreadsNum;
 
+    public BindMode bindMode;
+
+    public int heartbeatIntervalSeconds;
+
+    public String systemId;
+
+    public String password;
+
+    public String systemType;
+
+    public byte interfaceVersion;
+
+    public byte addrTon;
+
+    public byte addrNpi;
+
+    public String addressRange;
+
     public SmppClientConfig host(String host) {
         this.host = host;
         return this;
@@ -39,6 +57,51 @@ public class SmppClientConfig {
 
     public SmppClientConfig ioThreadsNum(int ioThreadsNum) {
         this.ioThreadsNum = ioThreadsNum;
+        return this;
+    }
+
+    public SmppClientConfig bindMode(BindMode bindMode) {
+        this.bindMode = bindMode;
+        return this;
+    }
+
+    public SmppClientConfig heartbeatIntervalSeconds(int heartbeatIntervalSeconds) {
+        this.heartbeatIntervalSeconds = heartbeatIntervalSeconds;
+        return this;
+    }
+
+    public SmppClientConfig systemId(String systemId) {
+        this.systemId = systemId;
+        return this;
+    }
+
+    public SmppClientConfig password(String password) {
+        this.password = password;
+        return this;
+    }
+
+    public SmppClientConfig systemType(String systemType) {
+        this.systemType = systemType;
+        return this;
+    }
+
+    public SmppClientConfig interfaceVersion(byte interfaceVersion) {
+        this.interfaceVersion = interfaceVersion;
+        return this;
+    }
+
+    public SmppClientConfig addrTon(byte addrTon) {
+        this.addrTon = addrTon;
+        return this;
+    }
+
+    public SmppClientConfig addrNpi(byte addrNpi) {
+        this.addrNpi = addrNpi;
+        return this;
+    }
+
+    public SmppClientConfig addressRange(String addressRange) {
+        this.addressRange = addressRange;
         return this;
     }
 }
