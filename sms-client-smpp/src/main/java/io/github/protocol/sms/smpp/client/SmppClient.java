@@ -54,12 +54,14 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
 
     private final SmppClientConfig config;
@@ -87,6 +89,7 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
         if (group != null) {
             throw new IllegalStateException("Smpp Client Already started");
         }
+        log.info("begin start smpp client, config is {}", config);
         if (config.ioThreadsNum > 0) {
             group = new NioEventLoopGroup(config.ioThreadsNum);
         } else {
@@ -102,10 +105,16 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
                         ChannelPipeline p = ch.pipeline();
                         p.addLast(new SmppDecoder());
                         p.addLast(SmppEncoder.INSTANCE);
-                        p.addLast(this);
+                        p.addLast(SmppClient.this);
                     }
                 });
-        bootstrap.connect().sync();
+        ChannelFuture channelFuture = bootstrap.connect().sync();
+        if (channelFuture.isSuccess()) {
+            log.info("smpp client started");
+        } else {
+            log.error("smpp client start failed", channelFuture.cause());
+            throw new Exception("smpp client start failed", channelFuture.cause());
+        }
     }
 
     public CompletableFuture<BindResult> bindTransmitterAsync(SmppBindTransmitterBody bindTransmitterBody) {
@@ -147,38 +156,43 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         this.ctx = ctx;
-        SmppHeader header = new SmppHeader(SmppConst.BIND_RECEIVER_ID, seq.nextVal());
-        SmppMessage smppMessage;
-        switch (config.bindMode) {
-            case Receiver:
-                SmppBindReceiverBody bindReceiverBody = new SmppBindReceiverBody(config.systemId, config.password,
-                        config.systemType, config.interfaceVersion, config.addrTon,
-                        config.addrNpi, config.addressRange);
-                smppMessage = new SmppBindReceiver(header, bindReceiverBody);
-                break;
-            case Transmitter:
-                SmppBindTransmitterBody bindTransmitterBody = new SmppBindTransmitterBody(config.systemId, config.password,
-                        config.systemType, config.interfaceVersion, config.addrTon,
-                        config.addrNpi, config.addressRange);
-                smppMessage = new SmppBindTransmitter(header, bindTransmitterBody);
-                break;
-            case Transceiver:
-                SmppBindTransceiverBody bindTransceiverBody = new SmppBindTransceiverBody(config.systemId, config.password,
-                        config.systemType, config.interfaceVersion, config.addrTon,
-                        config.addrNpi, config.addressRange);
-                smppMessage = new SmppBindTransceiver(header, bindTransceiverBody);
-                break;
-            default:
-                throw new IllegalStateException("Unknown bind mode: " + config.bindMode);
-        }
-        ChannelFuture channelFuture = ctx.writeAndFlush(smppMessage);
-        channelFuture.addListener(f -> {
-            if (f.isSuccess()) {
-                state = State.Connecting;
-            } else {
-                state = State.None;
+        if (config.autoBind) {
+            SmppHeader header;
+            SmppMessage smppMessage;
+            switch (config.bindMode) {
+                case Receiver:
+                    header = new SmppHeader(SmppConst.BIND_RECEIVER_ID, seq.nextVal());
+                    SmppBindReceiverBody bindReceiverBody = new SmppBindReceiverBody(config.systemId, config.password,
+                            config.systemType, config.interfaceVersion, config.addrTon,
+                            config.addrNpi, config.addressRange);
+                    smppMessage = new SmppBindReceiver(header, bindReceiverBody);
+                    break;
+                case Transmitter:
+                    header = new SmppHeader(SmppConst.BIND_TRANSMITTER_ID, seq.nextVal());
+                    SmppBindTransmitterBody bindTransmitterBody = new SmppBindTransmitterBody(config.systemId, config.password,
+                            config.systemType, config.interfaceVersion, config.addrTon,
+                            config.addrNpi, config.addressRange);
+                    smppMessage = new SmppBindTransmitter(header, bindTransmitterBody);
+                    break;
+                case Transceiver:
+                    header = new SmppHeader(SmppConst.BIND_TRANSCEIVER_ID, seq.nextVal());
+                    SmppBindTransceiverBody bindTransceiverBody = new SmppBindTransceiverBody(config.systemId,
+                            config.password, config.systemType, config.interfaceVersion, config.addrTon,
+                            config.addrNpi, config.addressRange);
+                    smppMessage = new SmppBindTransceiver(header, bindTransceiverBody);
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown bind mode: " + config.bindMode);
             }
-        });
+            ChannelFuture channelFuture = ctx.writeAndFlush(smppMessage);
+            channelFuture.addListener(f -> {
+                if (f.isSuccess()) {
+                    state = State.Connecting;
+                } else {
+                    state = State.None;
+                }
+            });
+        }
     }
 
     @Override
@@ -269,10 +283,14 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     }
 
     private void bindReady(String systemId) {
-        bindResultFuture.complete(new BindResult(systemId));
-        ctx.channel().eventLoop().scheduleWithFixedDelay(() -> {
-            ctx.writeAndFlush(new SmppEnquireLink(new SmppHeader(SmppConst.ENQUIRE_LINK_ID, seq.nextVal())));
-        }, 0, config.heartbeatIntervalSeconds, TimeUnit.SECONDS);
+        if (bindResultFuture != null) {
+            bindResultFuture.complete(new BindResult(systemId));
+        }
+        if (config.heartbeatIntervalSeconds > 0) {
+            ctx.channel().eventLoop().scheduleWithFixedDelay(() -> {
+                ctx.writeAndFlush(new SmppEnquireLink(new SmppHeader(SmppConst.ENQUIRE_LINK_ID, seq.nextVal())));
+            }, 0, config.heartbeatIntervalSeconds, TimeUnit.SECONDS);
+        }
     }
 
     @Override
