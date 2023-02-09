@@ -37,6 +37,11 @@
             <artifactId>netty-codec-smgp</artifactId>
             <version>${sms-codec.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.protocol-laboratory</groupId>
+            <artifactId>sms-client-util</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
 </project>

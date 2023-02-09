@@ -42,6 +42,7 @@ import io.github.protocol.codec.smpp.SmppSubmitMultiResp;
 import io.github.protocol.codec.smpp.SmppSubmitSm;
 import io.github.protocol.codec.smpp.SmppSubmitSmBody;
 import io.github.protocol.codec.smpp.SmppSubmitSmResp;
+import io.github.protocol.sms.client.util.BoundAtomicInt;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -68,9 +69,9 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
 
     private final BoundAtomicInt seq;
 
-    private final Map<Integer, CompletableFuture<SubmitSmResult>> submitSmFutures;
-
     private volatile CompletableFuture<BindResult> bindResultFuture;
+
+    private final Map<Integer, CompletableFuture<SubmitSmResult>> submitSmFutures;
 
     private volatile State state;
 
@@ -87,7 +88,7 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
 
     public void start() throws Exception {
         if (group != null) {
-            throw new IllegalStateException("Smpp Client Already started");
+            throw new IllegalStateException("smpp client already started");
         }
         log.info("begin start smpp client, config is {}", config);
         if (config.ioThreadsNum > 0) {

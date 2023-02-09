@@ -17,27 +17,25 @@
  * under the License.
  */
 
-package io.github.protocol.sms.smpp.client;
+package io.github.protocol.sms.smgp.client;
 
-import java.util.concurrent.atomic.AtomicInteger;
+public class SmgpClientConfig {
 
-public class BoundAtomicInt {
+    public String host;
 
-    private final int max;
+    public int port;
 
-    private final AtomicInteger integer;
+    public int ioThreadsNum;
 
-    public BoundAtomicInt(int max) {
-        this.max = max;
-        this.integer = new AtomicInteger();
+    public SmgpClientConfig host() {
+        return this;
     }
 
-    public int nextVal() {
-        return integer.getAndAccumulate(1, (left, right) -> {
-            if (left >= max) {
-                return 0;
-            }
-            return left + right;
-        });
+    public SmgpClientConfig port() {
+        return this;
+    }
+
+    public SmgpClientConfig ioThreadsNum() {
+        return this;
     }
 }
