@@ -21,7 +21,7 @@ package io.github.protocol.sms.smgp.client;
 
 public class SmgpClientConfig {
 
-    public String host;
+    public String host = "localhost";
 
     public int port;
 

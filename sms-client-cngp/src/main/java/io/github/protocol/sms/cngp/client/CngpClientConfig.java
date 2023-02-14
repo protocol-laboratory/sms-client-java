@@ -17,25 +17,25 @@
  * under the License.
  */
 
-package io.github.protocol.sms.cmpp.client;
+package io.github.protocol.sms.cngp.client;
 
-public class CmppClientConfig {
+public class CngpClientConfig {
 
-    public String host;
+    public String host = "localhost";
 
     public int port;
 
     public int ioThreadsNum;
     
-    public CmppClientConfig host() {
+    public CngpClientConfig host() {
         return this;
     }
     
-    public CmppClientConfig port() {
+    public CngpClientConfig port() {
         return this;
     }
     
-    public CmppClientConfig ioThreadsNum() {
+    public CngpClientConfig ioThreadsNum() {
         return this;
     }
 }
