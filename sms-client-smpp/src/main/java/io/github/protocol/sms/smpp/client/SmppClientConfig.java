@@ -24,7 +24,7 @@ import lombok.ToString;
 @ToString
 public class SmppClientConfig {
 
-    public String host;
+    public String host = "localhost";
 
     public int port;
 

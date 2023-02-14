@@ -17,25 +17,25 @@
  * under the License.
  */
 
-package io.github.protocol.sms.cngp.client;
+package io.github.protocol.sms.sgip.client;
 
-public class CngpClientConfig {
+public class SgipClientConfig {
 
-    public String host;
+    public String host = "localhost";
 
     public int port;
 
     public int ioThreadsNum;
     
-    public CngpClientConfig host() {
+    public SgipClientConfig host() {
         return this;
     }
     
-    public CngpClientConfig port() {
+    public SgipClientConfig port() {
         return this;
     }
     
-    public CngpClientConfig ioThreadsNum() {
+    public SgipClientConfig ioThreadsNum() {
         return this;
     }
 }
