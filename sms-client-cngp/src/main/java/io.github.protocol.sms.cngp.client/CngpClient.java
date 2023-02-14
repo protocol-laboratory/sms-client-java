@@ -21,10 +21,6 @@ package io.github.protocol.sms.cngp.client;
 
 import io.github.protocol.codec.cngp.CngpConst;
 import io.github.protocol.codec.cngp.CngpDecoder;
-import io.github.protocol.codec.cngp.CngpDeliver;
-import io.github.protocol.codec.cngp.CngpDeliverBody;
-import io.github.protocol.codec.cngp.CngpDeliverResp;
-import io.github.protocol.codec.cngp.CngpDeliverRespBody;
 import io.github.protocol.codec.cngp.CngpEncoder;
 import io.github.protocol.codec.cngp.CngpExit;
 import io.github.protocol.codec.cngp.CngpExitResp;
@@ -70,16 +66,12 @@ public class CngpClient extends SimpleChannelInboundHandler<CngpMessage> {
 
     private final Map<Integer, CompletableFuture<CngpSubmitRespBody>> submitFutures;
 
-    private final Map<Integer, CompletableFuture<CngpDeliverRespBody>> deliverFutures;
-
-    private final Map<Integer, CompletableFuture<Void>> exitFutures;
+    private volatile CompletableFuture<Void> exitFuture;
 
     public CngpClient(CngpClientConfig config) {
         this.config = config;
         this.seq = new BoundAtomicInt(0x7FFFFFFF);
         this.submitFutures = new ConcurrentHashMap<>();
-        this.deliverFutures = new ConcurrentHashMap<>();
-        this.exitFutures = new ConcurrentHashMap<>();
     }
 
     public void start() throws Exception {
@@ -140,25 +132,12 @@ public class CngpClient extends SimpleChannelInboundHandler<CngpMessage> {
         return future;
     }
 
-    public CompletableFuture<CngpDeliverRespBody> deliverAsync(CngpDeliverBody deliverBody) {
-        CompletableFuture<CngpDeliverRespBody> future = new CompletableFuture<>();
-        CngpHeader header = new CngpHeader(CngpConst.DELIVER_ID, 0, seq.nextVal());
-        ctx.writeAndFlush(new CngpDeliver(header, deliverBody)).addListener(f -> {
-            if (f.isSuccess()) {
-                deliverFutures.put(header.sequenceId(), future);
-            } else {
-                future.completeExceptionally(f.cause());
-            }
-        });
-        return future;
-    }
-
     public CompletableFuture<Void> exitAsync() {
         CompletableFuture<Void> future = new CompletableFuture<>();
         CngpHeader header = new CngpHeader(CngpConst.EXIT_ID, 0, seq.nextVal());
         ctx.writeAndFlush(new CngpExit(header)).addListener(f -> {
             if (f.isSuccess()) {
-                exitFutures.put(header.sequenceId(), future);
+                exitFuture = future;
             } else {
                 future.completeExceptionally(f.cause());
             }
@@ -179,8 +158,6 @@ public class CngpClient extends SimpleChannelInboundHandler<CngpMessage> {
             processLoginResp((CngpLoginResp) msg);
         } else if (msg instanceof CngpSubmitResp) {
             processSubmitResp((CngpSubmitResp) msg);
-        } else if (msg instanceof CngpDeliverResp) {
-            processDeliverResp((CngpDeliverResp) msg);
         } else if (msg instanceof CngpExitResp) {
             processExitResp((CngpExitResp) msg);
         }
@@ -206,22 +183,12 @@ public class CngpClient extends SimpleChannelInboundHandler<CngpMessage> {
         future.complete(cngpSubmitResp.body());
     }
 
-    private void processDeliverResp(CngpDeliverResp cngpDeliverResp) {
-        CompletableFuture<CngpDeliverRespBody> future = deliverFutures.remove(cngpDeliverResp.header().sequenceId());
-        if (future == null) {
-            log.warn("deliver future is null, sequence id is {}", cngpDeliverResp.header().sequenceId());
-            return;
-        }
-        future.complete(cngpDeliverResp.body());
-    }
-
     private void processExitResp(CngpExitResp cngpExitResp) {
-        CompletableFuture<Void> future = exitFutures.remove(cngpExitResp.header().sequenceId());
-        if (future == null) {
+        if (exitFuture == null) {
             log.warn("exit future is null, sequence id is {}", cngpExitResp.header().sequenceId());
             return;
         }
-        future.complete(null);
+        exitFuture.complete(null);
     }
 
     public void stop() {

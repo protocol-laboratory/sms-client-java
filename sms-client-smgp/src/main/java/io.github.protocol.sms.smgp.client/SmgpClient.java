@@ -62,7 +62,6 @@ public class SmgpClient extends SimpleChannelInboundHandler<SmgpMessage> {
 
     private volatile CompletableFuture<SmgpLoginRespBody> loginFuture;
 
-
     private final Map<Integer, CompletableFuture<SmgpSubmitRespBody>> submitFuture;
 
     public SmgpClient(SmgpClientConfig config) {
