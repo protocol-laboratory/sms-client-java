@@ -26,15 +26,15 @@ public class SgipClientConfig {
     public int port;
 
     public int ioThreadsNum;
-    
+
     public SgipClientConfig host() {
         return this;
     }
-    
+
     public SgipClientConfig port() {
         return this;
     }
-    
+
     public SgipClientConfig ioThreadsNum() {
         return this;
     }

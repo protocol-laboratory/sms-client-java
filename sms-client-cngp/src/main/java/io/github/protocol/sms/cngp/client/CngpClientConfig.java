@@ -26,15 +26,15 @@ public class CngpClientConfig {
     public int port;
 
     public int ioThreadsNum;
-    
+
     public CngpClientConfig host() {
         return this;
     }
-    
+
     public CngpClientConfig port() {
         return this;
     }
-    
+
     public CngpClientConfig ioThreadsNum() {
         return this;
     }

@@ -53,8 +53,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -70,6 +68,8 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     private final BoundAtomicInt seq;
 
     private volatile CompletableFuture<BindResult> bindResultFuture;
+
+    private volatile BindMode bindMode;
 
     private final Map<Integer, CompletableFuture<SubmitSmResult>> submitSmFutures;
 
@@ -121,14 +121,11 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     public CompletableFuture<BindResult> bindTransmitterAsync(SmppBindTransmitterBody bindTransmitterBody) {
         CompletableFuture<BindResult> future = new CompletableFuture<>();
         SmppHeader header = new SmppHeader(SmppConst.BIND_TRANSMITTER_ID, seq.nextVal());
-        ctx.writeAndFlush(new SmppBindTransmitter(header, bindTransmitterBody)).addListener(new GenericFutureListener<Future<? super Void>>() {
-            @Override
-            public void operationComplete(Future<? super Void> f) throws Exception {
-                if (f.isSuccess()) {
-                    bindResultFuture = future;
-                } else {
-                    future.completeExceptionally(f.cause());
-                }
+        ctx.writeAndFlush(new SmppBindTransmitter(header, bindTransmitterBody)).addListener(f -> {
+            if (f.isSuccess()) {
+                bindResultFuture = future;
+            } else {
+                future.completeExceptionally(f.cause());
             }
         });
         return future;
@@ -162,7 +159,7 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
 
     public CompletableFuture<SubmitSmResult> submitSmAsync(SmppSubmitSmBody submitSmBody) {
         CompletableFuture<SubmitSmResult> future = new CompletableFuture<>();
-        if (config.bindMode == BindMode.Receiver) {
+        if (bindMode == BindMode.Receiver) {
             throw new UnsupportedOperationException("Receiver mode not support submitSmAsync");
         }
         if (state != State.Ready) {
@@ -183,43 +180,6 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         this.ctx = ctx;
-        if (config.autoBind) {
-            SmppHeader header;
-            SmppMessage smppMessage;
-            switch (config.bindMode) {
-                case Receiver:
-                    header = new SmppHeader(SmppConst.BIND_RECEIVER_ID, seq.nextVal());
-                    SmppBindReceiverBody bindReceiverBody = new SmppBindReceiverBody(config.systemId, config.password,
-                            config.systemType, config.interfaceVersion, config.addrTon,
-                            config.addrNpi, config.addressRange);
-                    smppMessage = new SmppBindReceiver(header, bindReceiverBody);
-                    break;
-                case Transmitter:
-                    header = new SmppHeader(SmppConst.BIND_TRANSMITTER_ID, seq.nextVal());
-                    SmppBindTransmitterBody bindTransmitterBody = new SmppBindTransmitterBody(config.systemId, config.password,
-                            config.systemType, config.interfaceVersion, config.addrTon,
-                            config.addrNpi, config.addressRange);
-                    smppMessage = new SmppBindTransmitter(header, bindTransmitterBody);
-                    break;
-                case Transceiver:
-                    header = new SmppHeader(SmppConst.BIND_TRANSCEIVER_ID, seq.nextVal());
-                    SmppBindTransceiverBody bindTransceiverBody = new SmppBindTransceiverBody(config.systemId,
-                            config.password, config.systemType, config.interfaceVersion, config.addrTon,
-                            config.addrNpi, config.addressRange);
-                    smppMessage = new SmppBindTransceiver(header, bindTransceiverBody);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown bind mode: " + config.bindMode);
-            }
-            ChannelFuture channelFuture = ctx.writeAndFlush(smppMessage);
-            channelFuture.addListener(f -> {
-                if (f.isSuccess()) {
-                    state = State.Connecting;
-                } else {
-                    state = State.None;
-                }
-            });
-        }
     }
 
     @Override
@@ -252,11 +212,11 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     }
 
     private void processBindReceiverResp(SmppBindReceiverResp bindReceiverResp) {
-        if (config.bindMode != BindMode.Receiver) {
+        if (bindMode != BindMode.Receiver) {
             throw new IllegalStateException("Client mode is not receiver");
         }
         if (bindReceiverResp.header().commandStatus() == 0) {
-            bindReady(bindReceiverResp.body().systemId());
+            bindReady(bindReceiverResp.body().systemId(), BindMode.Receiver);
             state = State.Ready;
         } else {
             state = State.None;
@@ -264,11 +224,11 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     }
 
     private void processBindTransmitterResp(SmppBindTransmitterResp bindTransmitterResp) {
-        if (config.bindMode != BindMode.Transmitter) {
+        if (bindMode != BindMode.Transmitter) {
             throw new IllegalStateException("Client mode is not transmitter");
         }
         if (bindTransmitterResp.header().commandStatus() == 0) {
-            bindReady(bindTransmitterResp.body().systemId());
+            bindReady(bindTransmitterResp.body().systemId(), BindMode.Transmitter);
             state = State.Ready;
         } else {
             state = State.None;
@@ -292,12 +252,12 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     }
 
     private void processBindTransceiverResp(SmppBindTransceiverResp bindTransceiverResp) {
-        if (config.bindMode != BindMode.Transceiver) {
+        if (bindMode != BindMode.Transceiver) {
             throw new IllegalStateException("Client mode is not transceiver");
         }
         if (bindTransceiverResp.header().commandStatus() == 0) {
             state = State.Ready;
-            bindReady(bindTransceiverResp.body().systemId());
+            bindReady(bindTransceiverResp.body().systemId(), BindMode.Transceiver);
         } else {
             state = State.None;
         }
@@ -309,9 +269,10 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     private void processSubmitMultiResp(SmppSubmitMultiResp submitMultiResp) {
     }
 
-    private void bindReady(String systemId) {
+    private void bindReady(String systemId, BindMode bindMode) {
         if (bindResultFuture != null) {
             bindResultFuture.complete(new BindResult(systemId));
+            this.bindMode = bindMode;
         }
         if (config.heartbeatIntervalSeconds > 0) {
             ctx.channel().eventLoop().scheduleWithFixedDelay(() -> {

@@ -19,6 +19,9 @@
 
 package io.github.protocol.sms.smpp.client;
 
+import lombok.ToString;
+
+@ToString
 public class SubmitSmResult {
 
     private final String messageId;

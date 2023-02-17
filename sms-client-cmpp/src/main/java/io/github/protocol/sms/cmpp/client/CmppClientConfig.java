@@ -26,15 +26,15 @@ public class CmppClientConfig {
     public int port;
 
     public int ioThreadsNum;
-    
+
     public CmppClientConfig host() {
         return this;
     }
-    
+
     public CmppClientConfig port() {
         return this;
     }
-    
+
     public CmppClientConfig ioThreadsNum() {
         return this;
     }

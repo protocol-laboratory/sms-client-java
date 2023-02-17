@@ -41,9 +41,10 @@
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <src.dir>src/main/java</src.dir>
         <!-- dependency -->
         <log4j.version>2.19.0</log4j.version>
-        <netty.version>4.1.87.Final</netty.version>
+        <netty.version>4.1.88.Final</netty.version>
         <slf4j.version>2.0.6</slf4j.version>
         <sms-codec.version>0.0.5</sms-codec.version>
         <!-- plugin -->
