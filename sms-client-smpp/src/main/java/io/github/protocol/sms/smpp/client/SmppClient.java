@@ -162,8 +162,8 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
 
     public CompletableFuture<SubmitSmResult> submitSmAsync(SmppSubmitSmBody submitSmBody) {
         CompletableFuture<SubmitSmResult> future = new CompletableFuture<>();
-        if (config.bindMode == BindMode.Transceiver) {
-            throw new UnsupportedOperationException("Transceiver mode not support submitSmAsync");
+        if (config.bindMode == BindMode.Receiver) {
+            throw new UnsupportedOperationException("Receiver mode not support submitSmAsync");
         }
         if (state != State.Ready) {
             future.completeExceptionally(new IllegalStateException("Smpp Client not ready"));
