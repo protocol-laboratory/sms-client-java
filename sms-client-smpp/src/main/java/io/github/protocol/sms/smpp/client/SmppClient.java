@@ -134,19 +134,12 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
         return future;
     }
 
-    public CompletableFuture<SubmitSmResult> submitSmAsync(SmppSubmitSmBody submitSmBody) {
-        CompletableFuture<SubmitSmResult> future = new CompletableFuture<>();
-        if (config.bindMode == BindMode.Transceiver) {
-            throw new UnsupportedOperationException("Transceiver mode not support submitSmAsync");
-        }
-        if (state != State.Ready) {
-            future.completeExceptionally(new IllegalStateException("Smpp Client not ready"));
-            return future;
-        }
-        SmppHeader header = new SmppHeader(SmppConst.SUBMIT_SM_ID, seq.nextVal());
-        ctx.writeAndFlush(new SmppSubmitSm(header, submitSmBody)).addListener(f -> {
+    public CompletableFuture<BindResult> bindReceiverAsync(SmppBindReceiverBody bindReceiverBody) {
+        CompletableFuture<BindResult> future = new CompletableFuture<>();
+        SmppHeader header = new SmppHeader(SmppConst.BIND_RECEIVER_ID, seq.nextVal());
+        ctx.writeAndFlush(new SmppBindReceiver(header, bindReceiverBody)).addListener(f -> {
             if (f.isSuccess()) {
-                submitSmFutures.put(header.sequenceNumber(), future);
+                bindResultFuture = future;
             } else {
                 future.completeExceptionally(f.cause());
             }
@@ -167,12 +160,19 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
         return future;
     }
 
-    public CompletableFuture<BindResult> bindReceiverAsync(SmppBindReceiverBody bindReceiverBody) {
-        CompletableFuture<BindResult> future = new CompletableFuture<>();
-        SmppHeader header = new SmppHeader(SmppConst.BIND_RECEIVER_ID, seq.nextVal());
-        ctx.writeAndFlush(new SmppBindReceiver(header, bindReceiverBody)).addListener(f -> {
+    public CompletableFuture<SubmitSmResult> submitSmAsync(SmppSubmitSmBody submitSmBody) {
+        CompletableFuture<SubmitSmResult> future = new CompletableFuture<>();
+        if (config.bindMode == BindMode.Transceiver) {
+            throw new UnsupportedOperationException("Transceiver mode not support submitSmAsync");
+        }
+        if (state != State.Ready) {
+            future.completeExceptionally(new IllegalStateException("Smpp Client not ready"));
+            return future;
+        }
+        SmppHeader header = new SmppHeader(SmppConst.SUBMIT_SM_ID, seq.nextVal());
+        ctx.writeAndFlush(new SmppSubmitSm(header, submitSmBody)).addListener(f -> {
             if (f.isSuccess()) {
-                bindResultFuture = future;
+                submitSmFutures.put(header.sequenceNumber(), future);
             } else {
                 future.completeExceptionally(f.cause());
             }
