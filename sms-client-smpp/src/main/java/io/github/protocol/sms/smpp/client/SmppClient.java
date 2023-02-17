@@ -25,6 +25,7 @@ import io.github.protocol.codec.smpp.SmppBindReceiverResp;
 import io.github.protocol.codec.smpp.SmppBindTransceiver;
 import io.github.protocol.codec.smpp.SmppBindTransceiverBody;
 import io.github.protocol.codec.smpp.SmppBindTransceiverResp;
+import io.github.protocol.codec.smpp.SmppBindTransceiverRespBody;
 import io.github.protocol.codec.smpp.SmppBindTransmitter;
 import io.github.protocol.codec.smpp.SmppBindTransmitterBody;
 import io.github.protocol.codec.smpp.SmppBindTransmitterResp;
@@ -147,6 +148,19 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
         ctx.writeAndFlush(new SmppSubmitSm(header, submitSmBody)).addListener(f -> {
             if (f.isSuccess()) {
                 submitSmFutures.put(header.sequenceNumber(), future);
+            } else {
+                future.completeExceptionally(f.cause());
+            }
+        });
+        return future;
+    }
+
+    public CompletableFuture<BindResult> bindTransceiverAsync(SmppBindTransceiverBody bindTransceiverBody) {
+        CompletableFuture<BindResult> future = new CompletableFuture<>();
+        SmppHeader header = new SmppHeader(SmppConst.BIND_TRANSCEIVER_ID, seq.nextVal());
+        ctx.writeAndFlush(new SmppBindTransceiver(header, bindTransceiverBody)).addListener(f -> {
+            if (f.isSuccess()) {
+                bindResultFuture = future;
             } else {
                 future.completeExceptionally(f.cause());
             }
