@@ -29,4 +29,8 @@ public class BindResult {
     public BindResult(String systemId) {
         this.systemId = systemId;
     }
+
+    public String systemId() {
+        return systemId;
+    }
 }
