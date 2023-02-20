@@ -42,6 +42,8 @@ import io.github.protocol.codec.smpp.SmppSubmitMultiResp;
 import io.github.protocol.codec.smpp.SmppSubmitSm;
 import io.github.protocol.codec.smpp.SmppSubmitSmBody;
 import io.github.protocol.codec.smpp.SmppSubmitSmResp;
+import io.github.protocol.codec.smpp.SmppUnbind;
+import io.github.protocol.codec.smpp.SmppUnbindResp;
 import io.github.protocol.sms.client.util.BoundAtomicInt;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -58,7 +60,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Slf4j
 public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
@@ -68,6 +72,8 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     private final BoundAtomicInt seq;
 
     private volatile CompletableFuture<BindResult> bindResultFuture;
+
+    private volatile CompletableFuture<Void> unbindFuture;
 
     private volatile BindMode bindMode;
 
@@ -118,43 +124,101 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
         }
     }
 
+    public BindResult bindTransmitter(SmppBindTransmitterBody bindTransmitterBody)
+            throws ExecutionException, InterruptedException {
+        return this.bindTransmitterAsync(bindTransmitterBody).get();
+    }
+
+    public BindResult bindTransmitter(SmppBindTransmitterBody bindTransmitterBody, long timeout, TimeUnit unit)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        return this.bindTransmitterAsync(bindTransmitterBody).get(timeout, unit);
+    }
+
     public CompletableFuture<BindResult> bindTransmitterAsync(SmppBindTransmitterBody bindTransmitterBody) {
         CompletableFuture<BindResult> future = new CompletableFuture<>();
         SmppHeader header = new SmppHeader(SmppConst.BIND_TRANSMITTER_ID, seq.nextVal());
+        bindResultFuture = future;
         ctx.writeAndFlush(new SmppBindTransmitter(header, bindTransmitterBody)).addListener(f -> {
-            if (f.isSuccess()) {
-                bindResultFuture = future;
-            } else {
+            if (!f.isSuccess()) {
                 future.completeExceptionally(f.cause());
             }
         });
         return future;
     }
 
+    public BindResult bindReceiver(SmppBindReceiverBody bindReceiverBody)
+            throws ExecutionException, InterruptedException {
+        return this.bindReceiverAsync(bindReceiverBody).get();
+    }
+
+    public BindResult bindReceiver(SmppBindReceiverBody bindReceiverBody, long timeout, TimeUnit unit)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        return this.bindReceiverAsync(bindReceiverBody).get(timeout, unit);
+    }
+
+
     public CompletableFuture<BindResult> bindReceiverAsync(SmppBindReceiverBody bindReceiverBody) {
         CompletableFuture<BindResult> future = new CompletableFuture<>();
         SmppHeader header = new SmppHeader(SmppConst.BIND_RECEIVER_ID, seq.nextVal());
+        bindResultFuture = future;
         ctx.writeAndFlush(new SmppBindReceiver(header, bindReceiverBody)).addListener(f -> {
-            if (f.isSuccess()) {
-                bindResultFuture = future;
-            } else {
+            if (!f.isSuccess()) {
                 future.completeExceptionally(f.cause());
             }
         });
         return future;
+    }
+
+    public void unbind() throws ExecutionException, InterruptedException {
+        this.unbindAsync().get();
+    }
+
+    public void unbind(long timeout, TimeUnit unit) throws ExecutionException, InterruptedException, TimeoutException {
+        this.unbindAsync().get(timeout, unit);
+    }
+
+    public CompletableFuture<Void> unbindAsync() {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        SmppHeader header = new SmppHeader(SmppConst.UNBIND_ID, seq.nextVal());
+        unbindFuture = future;
+        ctx.writeAndFlush(new SmppUnbind(header)).addListener(f -> {
+            if (!f.isSuccess()) {
+                future.completeExceptionally(f.cause());
+            }
+        });
+        return future;
+    }
+
+    public BindResult bindTransceiver(SmppBindTransceiverBody bindTransceiverBody)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        return bindTransceiverAsync(bindTransceiverBody).get();
+    }
+
+    public BindResult bindTransceiver(SmppBindTransceiverBody bindTransceiverBody, long timeout, TimeUnit unit)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        return this.bindTransceiverAsync(bindTransceiverBody).get(timeout, unit);
     }
 
     public CompletableFuture<BindResult> bindTransceiverAsync(SmppBindTransceiverBody bindTransceiverBody) {
         CompletableFuture<BindResult> future = new CompletableFuture<>();
         SmppHeader header = new SmppHeader(SmppConst.BIND_TRANSCEIVER_ID, seq.nextVal());
+        bindResultFuture = future;
         ctx.writeAndFlush(new SmppBindTransceiver(header, bindTransceiverBody)).addListener(f -> {
-            if (f.isSuccess()) {
-                bindResultFuture = future;
-            } else {
+            if (!f.isSuccess()) {
                 future.completeExceptionally(f.cause());
             }
         });
         return future;
+    }
+
+    public SubmitSmResult submitSm(SmppSubmitSmBody submitSmBody)
+            throws ExecutionException, InterruptedException {
+        return this.submitSmAsync(submitSmBody).get();
+    }
+
+    public SubmitSmResult submitSm(SmppSubmitSmBody submitSmBody, long timeout, TimeUnit unit)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        return this.submitSmAsync(submitSmBody).get(timeout, unit);
     }
 
     public CompletableFuture<SubmitSmResult> submitSmAsync(SmppSubmitSmBody submitSmBody) {
@@ -167,10 +231,9 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
             return future;
         }
         SmppHeader header = new SmppHeader(SmppConst.SUBMIT_SM_ID, seq.nextVal());
+        submitSmFutures.put(header.sequenceNumber(), future);
         ctx.writeAndFlush(new SmppSubmitSm(header, submitSmBody)).addListener(f -> {
-            if (f.isSuccess()) {
-                submitSmFutures.put(header.sequenceNumber(), future);
-            } else {
+            if (!f.isSuccess()) {
                 future.completeExceptionally(f.cause());
             }
         });
@@ -198,6 +261,8 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
             processDeliverSm((SmppDeliverSm) msg);
         } else if (msg instanceof SmppDeliverSmResp) {
             processDeliverSmResp((SmppDeliverSmResp) msg);
+        } else if (msg instanceof SmppUnbindResp) {
+            processUnbindResp((SmppUnbindResp) msg);
         } else if (msg instanceof SmppBindTransceiverResp) {
             processBindTransceiverResp((SmppBindTransceiverResp) msg);
         } else if (msg instanceof SmppEnquireLinkResp) {
@@ -249,6 +314,15 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     }
 
     private void processDeliverSmResp(SmppDeliverSmResp deliverSmResp) {
+    }
+
+
+    private void processUnbindResp(SmppUnbindResp msg) {
+        if (unbindFuture == null) {
+            log.warn("submit future is null, sequence number is {}", msg.header().sequenceNumber());
+            return;
+        }
+        unbindFuture.complete(null);
     }
 
     private void processBindTransceiverResp(SmppBindTransceiverResp bindTransceiverResp) {

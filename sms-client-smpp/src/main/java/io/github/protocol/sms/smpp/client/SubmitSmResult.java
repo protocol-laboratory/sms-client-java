@@ -29,4 +29,8 @@ public class SubmitSmResult {
     public SubmitSmResult(String messageId) {
         this.messageId = messageId;
     }
+
+    public String messageId() {
+        return messageId;
+    }
 }
