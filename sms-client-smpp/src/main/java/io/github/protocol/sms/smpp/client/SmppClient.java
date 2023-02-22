@@ -223,9 +223,6 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
 
     public CompletableFuture<SubmitSmResult> submitSmAsync(SmppSubmitSmBody submitSmBody) {
         CompletableFuture<SubmitSmResult> future = new CompletableFuture<>();
-        if (bindMode == BindMode.Receiver) {
-            throw new UnsupportedOperationException("Receiver mode not support submitSmAsync");
-        }
         if (state != State.Ready) {
             future.completeExceptionally(new IllegalStateException("Smpp Client not ready"));
             return future;
@@ -277,9 +274,6 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     }
 
     private void processBindReceiverResp(SmppBindReceiverResp bindReceiverResp) {
-        if (bindMode != BindMode.Receiver) {
-            throw new IllegalStateException("Client mode is not receiver");
-        }
         if (bindReceiverResp.header().commandStatus() == 0) {
             bindReady(bindReceiverResp.body().systemId(), BindMode.Receiver);
             state = State.Ready;
@@ -289,9 +283,6 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     }
 
     private void processBindTransmitterResp(SmppBindTransmitterResp bindTransmitterResp) {
-        if (bindMode != BindMode.Transmitter) {
-            throw new IllegalStateException("Client mode is not transmitter");
-        }
         if (bindTransmitterResp.header().commandStatus() == 0) {
             bindReady(bindTransmitterResp.body().systemId(), BindMode.Transmitter);
             state = State.Ready;
@@ -326,9 +317,6 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     }
 
     private void processBindTransceiverResp(SmppBindTransceiverResp bindTransceiverResp) {
-        if (bindMode != BindMode.Transceiver) {
-            throw new IllegalStateException("Client mode is not transceiver");
-        }
         if (bindTransceiverResp.header().commandStatus() == 0) {
             state = State.Ready;
             bindReady(bindTransceiverResp.body().systemId(), BindMode.Transceiver);
