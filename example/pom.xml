@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.protocol-laboratory</groupId>
+        <artifactId>sms-client</artifactId>
+        <version>0.0.6</version>
+    </parent>
+
+    <artifactId>sms-client-example</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.protocol-laboratory</groupId>
+            <artifactId>sms-client-cmpp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.protocol-laboratory</groupId>
+            <artifactId>sms-client-cngp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.protocol-laboratory</groupId>
+            <artifactId>sms-client-sgip</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.protocol-laboratory</groupId>
+            <artifactId>sms-client-smgp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.protocol-laboratory</groupId>
+            <artifactId>sms-client-smpp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>
