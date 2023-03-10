@@ -29,6 +29,7 @@
     <version>0.0.6</version>
     <packaging>pom</packaging>
     <modules>
+        <module>example</module>
         <module>sms-client-cmpp</module>
         <module>sms-client-cngp</module>
         <module>sms-client-sgip</module>
@@ -43,15 +44,15 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <src.dir>src/main/java</src.dir>
         <!-- dependency -->
-        <log4j.version>2.19.0</log4j.version>
-        <netty.version>4.1.88.Final</netty.version>
+        <log4j.version>2.20.0</log4j.version>
+        <netty.version>4.1.89.Final</netty.version>
         <slf4j.version>2.0.6</slf4j.version>
         <sms-codec.version>0.0.6</sms-codec.version>
         <!-- plugin -->
         <compiler-plugin.version>3.10.1</compiler-plugin.version>
         <checkstyle-plugin.version>3.2.1</checkstyle-plugin.version>
         <lombok.version>1.18.26</lombok.version>
-        <puppycrawl.version>10.3.3</puppycrawl.version>
+        <puppycrawl.version>10.8.1</puppycrawl.version>
         <spotbugs-maven-plugin.version>4.7.3.0</spotbugs-maven-plugin.version>
     </properties>
 
