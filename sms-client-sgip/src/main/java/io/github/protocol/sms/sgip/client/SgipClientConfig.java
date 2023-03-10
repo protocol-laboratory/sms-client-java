@@ -23,7 +23,7 @@ public class SgipClientConfig {
 
     public String host = "localhost";
 
-    public int port;
+    public int port = 8801;
 
     public int ioThreadsNum;
 

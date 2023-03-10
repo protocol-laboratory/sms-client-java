@@ -19,11 +19,14 @@
 
 package io.github.protocol.sms.cmpp.client;
 
+import lombok.ToString;
+
+@ToString
 public class CmppClientConfig {
 
     public String host = "localhost";
 
-    public int port;
+    public int port = 7890;
 
     public int ioThreadsNum;
 

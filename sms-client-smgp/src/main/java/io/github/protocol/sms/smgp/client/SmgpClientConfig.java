@@ -19,11 +19,14 @@
 
 package io.github.protocol.sms.smgp.client;
 
+import lombok.ToString;
+
+@ToString
 public class SmgpClientConfig {
 
     public String host = "localhost";
 
-    public int port;
+    public int port = 9000;
 
     public int ioThreadsNum;
 
