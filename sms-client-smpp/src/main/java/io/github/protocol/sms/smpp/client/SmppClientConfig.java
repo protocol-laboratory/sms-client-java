@@ -26,7 +26,7 @@ public class SmppClientConfig {
 
     public String host = "localhost";
 
-    public int port;
+    public int port = 2775;
 
     public int ioThreadsNum;
 

@@ -19,11 +19,14 @@
 
 package io.github.protocol.sms.cngp.client;
 
+import lombok.ToString;
+
+@ToString
 public class CngpClientConfig {
 
     public String host = "localhost";
 
-    public int port;
+    public int port = 9890;
 
     public int ioThreadsNum;
 
