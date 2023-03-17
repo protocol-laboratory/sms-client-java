@@ -21,6 +21,8 @@ package io.github.protocol.sms.smgp.client;
 
 import lombok.ToString;
 
+import java.util.Set;
+
 @ToString
 public class SmgpClientConfig {
 
@@ -29,6 +31,20 @@ public class SmgpClientConfig {
     public int port = 9000;
 
     public int ioThreadsNum;
+
+    public boolean useSsl;
+
+    public String keyStorePath;
+
+    public String keyStorePassword;
+
+    public String trustStorePath;
+
+    public String trustStorePassword;
+
+    public boolean skipSslVerify;
+
+    public Set<String> ciphers;
 
     public SmgpClientConfig host() {
         return this;
@@ -39,6 +55,41 @@ public class SmgpClientConfig {
     }
 
     public SmgpClientConfig ioThreadsNum() {
+        return this;
+    }
+
+    public SmgpClientConfig useSsl(boolean useSsl) {
+        this.useSsl = useSsl;
+        return this;
+    }
+
+    public SmgpClientConfig keyStorePath(String keyStorePath) {
+        this.keyStorePath = keyStorePath;
+        return this;
+    }
+
+    public SmgpClientConfig keyStorePassword(String keyStorePassword) {
+        this.keyStorePassword = keyStorePassword;
+        return this;
+    }
+
+    public SmgpClientConfig trustStorePath(String trustStorePath) {
+        this.trustStorePath = trustStorePath;
+        return this;
+    }
+
+    public SmgpClientConfig trustStorePassword(String trustStorePassword) {
+        this.trustStorePassword = trustStorePassword;
+        return this;
+    }
+
+    public SmgpClientConfig skipSslVerify(boolean skipSslVerify) {
+        this.skipSslVerify = skipSslVerify;
+        return this;
+    }
+
+    public SmgpClientConfig ciphers(Set<String> ciphers) {
+        this.ciphers = ciphers;
         return this;
     }
 }

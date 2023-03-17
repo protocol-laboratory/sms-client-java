@@ -6,9 +6,16 @@
     <parent>
         <groupId>io.github.protocol-laboratory</groupId>
         <artifactId>sms-client</artifactId>
-        <version>0.0.6</version>
+        <version>0.0.7</version>
     </parent>
 
     <artifactId>sms-client-util</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-handler</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

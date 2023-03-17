@@ -33,6 +33,7 @@ import io.github.protocol.codec.smgp.SmgpSubmitBody;
 import io.github.protocol.codec.smgp.SmgpSubmitResp;
 import io.github.protocol.codec.smgp.SmgpSubmitRespBody;
 import io.github.protocol.sms.client.util.BoundAtomicInt;
+import io.github.protocol.sms.client.util.SslContextUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -43,9 +44,11 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.SslContext;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -60,6 +63,8 @@ public class SmgpClient extends SimpleChannelInboundHandler<SmgpMessage> {
 
     private ChannelHandlerContext ctx;
 
+    private final Optional<SslContext> sslContextOp;
+
     private volatile CompletableFuture<SmgpLoginRespBody> loginFuture;
 
     private final Map<Integer, CompletableFuture<SmgpSubmitRespBody>> submitFuture;
@@ -68,6 +73,13 @@ public class SmgpClient extends SimpleChannelInboundHandler<SmgpMessage> {
         this.config = config;
         this.seq = new BoundAtomicInt(0x7FFFFFFF);
         this.submitFuture = new ConcurrentHashMap<>();
+        if (config.useSsl) {
+            sslContextOp = Optional.of(SslContextUtil.buildFromJks(config.keyStorePath, config.keyStorePassword,
+                    config.trustStorePath, config.trustStorePassword, config.skipSslVerify,
+                    config.ciphers));
+        } else {
+            sslContextOp = Optional.empty();
+        }
     }
 
     public void start() throws Exception {
@@ -91,6 +103,12 @@ public class SmgpClient extends SimpleChannelInboundHandler<SmgpMessage> {
                         p.addLast(new SmgpDecoder());
                         p.addLast(SmgpEncoder.INSTANCE);
                         p.addLast(SmgpClient.this);
+                        if (config.useSsl) {
+                            if (!sslContextOp.isPresent()) {
+                                throw new IllegalStateException("ssl context not present");
+                            }
+                            p.addLast(sslContextOp.get().newHandler(ch.alloc()));
+                        }
                     }
                 });
         ChannelFuture channelFuture = bootstrap.connect().sync();
