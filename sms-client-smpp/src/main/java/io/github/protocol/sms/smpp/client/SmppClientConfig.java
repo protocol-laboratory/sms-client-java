@@ -21,6 +21,8 @@ package io.github.protocol.sms.smpp.client;
 
 import lombok.ToString;
 
+import java.util.Set;
+
 @ToString
 public class SmppClientConfig {
 
@@ -31,6 +33,20 @@ public class SmppClientConfig {
     public int ioThreadsNum;
 
     public int heartbeatIntervalSeconds;
+
+    public boolean useSsl;
+
+    public String keyStorePath;
+
+    public String keyStorePassword;
+
+    public String trustStorePath;
+
+    public String trustStorePassword;
+
+    public boolean skipSslVerify;
+
+    public Set<String> ciphers;
 
     public SmppClientConfig host(String host) {
         this.host = host;
@@ -49,6 +65,41 @@ public class SmppClientConfig {
 
     public SmppClientConfig heartbeatIntervalSeconds(int heartbeatIntervalSeconds) {
         this.heartbeatIntervalSeconds = heartbeatIntervalSeconds;
+        return this;
+    }
+
+    public SmppClientConfig useSsl(boolean useSsl) {
+        this.useSsl = useSsl;
+        return this;
+    }
+
+    public SmppClientConfig keyStorePath(String keyStorePath) {
+        this.keyStorePath = keyStorePath;
+        return this;
+    }
+
+    public SmppClientConfig keyStorePassword(String keyStorePassword) {
+        this.keyStorePassword = keyStorePassword;
+        return this;
+    }
+
+    public SmppClientConfig trustStorePath(String trustStorePath) {
+        this.trustStorePath = trustStorePath;
+        return this;
+    }
+
+    public SmppClientConfig trustStorePassword(String trustStorePassword) {
+        this.trustStorePassword = trustStorePassword;
+        return this;
+    }
+
+    public SmppClientConfig skipSslVerify(boolean skipSslVerify) {
+        this.skipSslVerify = skipSslVerify;
+        return this;
+    }
+
+    public SmppClientConfig ciphers(Set<String> ciphers) {
+        this.ciphers = ciphers;
         return this;
     }
 }

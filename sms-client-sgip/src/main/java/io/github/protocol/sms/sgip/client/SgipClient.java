@@ -49,6 +49,7 @@ import io.github.protocol.codec.sgip.SgipUserRptBody;
 import io.github.protocol.codec.sgip.SgipUserRptResp;
 import io.github.protocol.codec.sgip.SgipUserRptRespBody;
 import io.github.protocol.sms.client.util.BoundAtomicInt;
+import io.github.protocol.sms.client.util.SslContextUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -59,9 +60,11 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.SslContext;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -75,6 +78,8 @@ public class SgipClient extends SimpleChannelInboundHandler<SgipMessage> {
     private EventLoopGroup group;
 
     private ChannelHandlerContext ctx;
+
+    private final Optional<SslContext> sslContextOp;
 
     private volatile CompletableFuture<SgipBindRespBody> bindFuture;
 
@@ -98,6 +103,13 @@ public class SgipClient extends SimpleChannelInboundHandler<SgipMessage> {
         this.reportFuture = new ConcurrentHashMap<>();
         this.userRptFuture = new ConcurrentHashMap<>();
         this.traceRptFuture = new ConcurrentHashMap<>();
+        if (config.useSsl) {
+            sslContextOp = Optional.of(SslContextUtil.buildFromJks(config.keyStorePath, config.keyStorePassword,
+                    config.trustStorePath, config.trustStorePassword, config.skipSslVerify,
+                    config.ciphers));
+        } else {
+            sslContextOp = Optional.empty();
+        }
     }
 
     public void start() throws Exception {
@@ -121,6 +133,12 @@ public class SgipClient extends SimpleChannelInboundHandler<SgipMessage> {
                         p.addLast(new SgipDecoder());
                         p.addLast(SgipEncoder.INSTANCE);
                         p.addLast(SgipClient.this);
+                        if (config.useSsl) {
+                            if (!sslContextOp.isPresent()) {
+                                throw new IllegalStateException("ssl context not present");
+                            }
+                            p.addLast(sslContextOp.get().newHandler(ch.alloc()));
+                        }
                     }
                 });
         ChannelFuture channelFuture = bootstrap.connect().sync();

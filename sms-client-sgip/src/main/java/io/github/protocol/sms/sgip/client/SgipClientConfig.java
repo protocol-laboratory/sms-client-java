@@ -19,6 +19,8 @@
 
 package io.github.protocol.sms.sgip.client;
 
+import java.util.Set;
+
 public class SgipClientConfig {
 
     public String host = "localhost";
@@ -26,6 +28,20 @@ public class SgipClientConfig {
     public int port = 8801;
 
     public int ioThreadsNum;
+
+    public boolean useSsl;
+
+    public String keyStorePath;
+
+    public String keyStorePassword;
+
+    public String trustStorePath;
+
+    public String trustStorePassword;
+
+    public boolean skipSslVerify;
+
+    public Set<String> ciphers;
 
     public SgipClientConfig host() {
         return this;
@@ -36,6 +52,41 @@ public class SgipClientConfig {
     }
 
     public SgipClientConfig ioThreadsNum() {
+        return this;
+    }
+
+    public SgipClientConfig useSsl(boolean useSsl) {
+        this.useSsl = useSsl;
+        return this;
+    }
+
+    public SgipClientConfig keyStorePath(String keyStorePath) {
+        this.keyStorePath = keyStorePath;
+        return this;
+    }
+
+    public SgipClientConfig keyStorePassword(String keyStorePassword) {
+        this.keyStorePassword = keyStorePassword;
+        return this;
+    }
+
+    public SgipClientConfig trustStorePath(String trustStorePath) {
+        this.trustStorePath = trustStorePath;
+        return this;
+    }
+
+    public SgipClientConfig trustStorePassword(String trustStorePassword) {
+        this.trustStorePassword = trustStorePassword;
+        return this;
+    }
+
+    public SgipClientConfig skipSslVerify(boolean skipSslVerify) {
+        this.skipSslVerify = skipSslVerify;
+        return this;
+    }
+
+    public SgipClientConfig ciphers(Set<String> ciphers) {
+        this.ciphers = ciphers;
         return this;
     }
 }
