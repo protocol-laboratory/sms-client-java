@@ -178,12 +178,12 @@ public class SgipClient extends SimpleChannelInboundHandler<SgipMessage> {
 
     public CompletableFuture<SgipSubmitRespBody> submitAsync(SgipSubmitBody submitBody) {
         CompletableFuture<SgipSubmitRespBody> future = new CompletableFuture<>();
-        SgipHeader sgipHeader = new SgipHeader(SgipConst.SUBMIT_ID, seq.nextVal());
-        ctx.writeAndFlush(new SgipSubmit(sgipHeader, submitBody)).addListener(f -> {
-            if (f.isSuccess()) {
-                submitFuture.put(sgipHeader.sequenceNumber(), future);
-            } else {
+        SgipHeader header = new SgipHeader(SgipConst.SUBMIT_ID, seq.nextVal());
+        submitFuture.put(header.sequenceNumber(), future);
+        ctx.writeAndFlush(new SgipSubmit(header, submitBody)).addListener(f -> {
+            if (!f.isSuccess()) {
                 future.completeExceptionally(f.cause());
+                submitFuture.remove(header.sequenceNumber());
             }
         });
         return future;

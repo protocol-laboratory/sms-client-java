@@ -136,11 +136,11 @@ public class CmppClient extends SimpleChannelInboundHandler<CmppMessage> {
     public CompletableFuture<SubmitResult> submitAsync(CmppSubmitBody submitBody) {
         CompletableFuture<SubmitResult> future = new CompletableFuture<>();
         CmppHeader header = new CmppHeader(CmppConst.SUBMIT_ID, seq.nextVal());
+        submitFutures.put(header.sequenceId(), future);
         ctx.writeAndFlush(new CmppSubmit(header, submitBody)).addListener(f -> {
-            if (f.isSuccess()) {
-                submitFutures.put(header.sequenceId(), future);
-            } else {
+            if (!f.isSuccess()) {
                 future.completeExceptionally(f.cause());
+                submitFutures.remove(header.sequenceId());
             }
         });
         return future;
