@@ -136,11 +136,11 @@ public class SmgpClient extends SimpleChannelInboundHandler<SmgpMessage> {
     public CompletableFuture<SmgpSubmitRespBody> submitAsync(SmgpSubmitBody smgpSubmitBody) {
         CompletableFuture<SmgpSubmitRespBody> future = new CompletableFuture<>();
         SmgpHeader header = new SmgpHeader(SmgpConst.SUBMIT_ID, seq.nextVal());
+        submitFuture.put(header.sequenceID(), future);
         ctx.writeAndFlush(new SmgpSubmit(header, smgpSubmitBody)).addListener(f -> {
-            if (f.isSuccess()) {
-                submitFuture.put(header.sequenceID(), future);
-            } else {
+            if (!f.isSuccess()) {
                 future.completeExceptionally(f.cause());
+                submitFuture.remove(header.sequenceID());
             }
         });
         return future;

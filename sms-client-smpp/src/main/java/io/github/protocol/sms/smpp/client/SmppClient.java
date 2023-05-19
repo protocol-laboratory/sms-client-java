@@ -250,6 +250,7 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
         ctx.writeAndFlush(new SmppSubmitSm(header, submitSmBody)).addListener(f -> {
             if (!f.isSuccess()) {
                 future.completeExceptionally(f.cause());
+                submitSmFutures.remove(header.sequenceNumber());
             }
         });
         return future;
