@@ -59,6 +59,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslContext;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -365,6 +366,27 @@ public class SmppClient extends SimpleChannelInboundHandler<SmppMessage> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught(ctx, cause);
+    }
+
+    public void submitSmWith7BytesUdhiMaxLength(
+            String serviceType, byte sourceAddrTon, byte sourceAddrNpi, String sourceAddr,
+            byte destAddrTon, byte destAddrNpi, String destinationAddr, byte esmClass,
+            byte protocolId, byte priorityFlag, String scheduleDeliveryTime,
+            String validityPeriod, byte registeredDelivery, byte replaceIfPresentFlag,
+            byte dataCoding, byte smDefaultMsgId, byte[] messageContent, int maxLength) {
+        List<byte[]> slices = SmppUtil.splitMessages(messageContent, maxLength);
+        slices.forEach(slice -> {
+            SmppSubmitSmBody smppSubmitSmBody = new SmppSubmitSmBody(serviceType, sourceAddrTon, sourceAddrNpi,
+                    sourceAddr, destAddrTon, destAddrNpi, destinationAddr, esmClass, protocolId, priorityFlag,
+                    scheduleDeliveryTime, validityPeriod, registeredDelivery, replaceIfPresentFlag, dataCoding,
+                    smDefaultMsgId, (short) slice.length, slice);
+            try {
+                this.submitSm(smppSubmitSmBody);
+            } catch (ExecutionException | InterruptedException e) {
+                log.warn("failed to dispatch sliced messages", e);
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public void stop() {
