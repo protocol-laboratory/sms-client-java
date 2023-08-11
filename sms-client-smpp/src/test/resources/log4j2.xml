@@ -22,7 +22,7 @@
 <Configuration status="info" monitorInterval="10">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern='%d{yyyy-MM-dd,HH:mm:ss,SSSXXX}(%r):%4p%X[%t#%T]-->%m%n'/>
+            <PatternLayout pattern='%d{yyyy-MM-dd,HH:mm:ss,SSSXXX}(%C:%L):%4p%X[%t#%T]-->%m%n'/>
         </Console>
     </Appenders>
     <Loggers>
