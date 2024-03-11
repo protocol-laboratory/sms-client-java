@@ -12,14 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: checkstyle
+name: unit tests
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
 
 jobs:
-  checkstyle:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -28,5 +31,9 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: checkstyle
-        run: mvn -B clean checkstyle:check
+      - name: unit tests
+        run: mvn -B clean test
+      - uses: codecov/codecov-action@v2
+        with:
+          files: ./java-tool/target/site/jacoco/jacoco.xml,./sdk-codec-bk/target/site/jacoco/jacoco.xml
+          flags: unittests
